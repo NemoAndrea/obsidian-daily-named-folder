@@ -1,57 +1,71 @@
-## Obsidian Sample Plugin
+## Obsidian Daily Folder Plugin
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+A community plugin for [Obsidian](https://obsidian.md/). 
 
-This project uses Typescript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in Typescript Definition format, which contains TSDoc comments describing what it does.
+the `daily-folder` plugin is exactly like the official `daily-note` plugin, except for the fact that the daily note is created inside it's own folder. This is desirable if you want to keep attachments for the daily note in separate folders.
 
-**Note:** The Obsidian API is still in early alpha and is subject to change at any time!
+![apple](https://i.imgur.com/RWckxI8.gif)
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Changes the default font color to red using `styles.css`.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+The plugin keeps all the nice features of the `daily-note` plugin and adds a few new ones
 
-### First time developing plugins?
+* Previous/Next daily note navigation. *Will find the nearest previous/next node - no need to worry about missed days.*
+* Smart new daily note: the `today's daily folder` function will create a new daily note **or, if a file already exists, open up the existing file.** 
+* Template selection. Specify a template markdown file to be used when a new daily note is created. Arguments between `{{ }}` will be parsed by `Moment.js`. 
+* `Moment.js` date formatting for filenames
+* Path checking in the plugin configuration menu. Get immediate feedback if you mistyped your path.
+* Filename descriptions. Add a brief description to each daily note that is appended after the date. Useful for quickly summarising a document and to speed up navigation.
 
-Quick starting guide for new plugin devs:
+### Functions
 
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+The plugin exposes 4 new functions to the Obsidian `command pallette`:
 
-### Releasing new releases
+1. `Rename daily folder` - if a daily folder is active (i.e. open), it will open a rename dialog. Will rename both the folder and the note (which have the same name)
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments.
-- Publish the release.
+2. `Open next daily folder note` - if a daily folder is active (i.e. open), it will open the *nearest* daily note with a later date. Will notify user if there are no newer files
 
-### Adding your plugin to the community plugin list
+3. `Open previous daily folder note` - same as (2) but for older files
 
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+4. `Open Today's daily folder note` - Creates a new daily folder note (filled with template)  if none exists. If a daily folder note already exists, it will open the existing one instead. Serves to quickly make or get to today's note.
 
-### How to use
+   > This function is also added as a ribbon icon  (i.e. as an icon to the left sidebar)  for quick access.
 
-- Clone this repo.
-- `npm i` or `yarn` to install dependencies
-- `npm run dev` to start compilation in watch mode.
+### Configuration
 
-### Manually installing the plugin
+There are 4 configuration options
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+1. `Folder & Name format` - the date format that will be the base of the daily folder (and file) name. Follows Moment.js format rules
 
-### API Documentation
+2. `Prompt for filename summary` - toggle value. If enabled, the plugin will prompt for a filename summary when creating a new note. If turned off it will just use the `folder & name format` for filename creation. 
 
-See https://github.com/obsidianmd/obsidian-api
+   > E.g. `20210801`  with prompt off, with prompt on you can get something like  `20210801_getting_a_new_puppy`
+
+3. `Daily folders location`  - the root directory for new daily folders. **Does not support nesting currently**
+
+4. `Template filee location` - the path to the markdown file to use as template. Supports Moment.js variables.  
+
+### Example use case
+
+I developed the plugin for my workflow. I use Obsidian as my lab journal for research. In this workflow I write down experiments done during the day, reference prior results a lot and include experimental images. 
+
+The official `daily-note` plugin did not work for this workflow for 2 reasons:
+
+1. It is not possible to keep images for a daily note with the daily file. (or at least not compactly)
+
+   > Being able to find images quickly is helpful if one intends to use them for other display purposes (e.g. in making a presentation, sending to a collaborator)
+
+2. It is not possible to quickly add a brief description to the daily note filename (it is always just a date)
+
+   > While obsidian makes it much easier to navigate, it still cannot beat a oneline summary. It also makes your daily notes easier to understand for someone *not* using obsidian
+
+### TODO
+
+There are a few things that could be made more robust
+
+1. The current date format only supports 'fixed-length' formats. So nothing like fully month names, as their length is not fixed `e.g. 'august' vs 'may'` 
+2. The `reveal-active-file` in file explorer doesn't work when just creating a new daily note. I think it may be related to the file-explorer not having indexed the file. Probably an easy fix, suggestions welcome.
+3. At the moment, the next-and-previous daily note navigation searches through all the markdown files in the vault. I don't know how well this will scale with vault size. So far with 200 files this is not a problem, but if this becomes  a problem, the plugin may have to switch to getting a list upon load, rather than sorting through all files every time. 
+4. Currently, deep nesting is not supported. So you can put your daily folders in the folder `dailies/` but not in `dailies/botany/jungle-tour/` . Not a difficult fix.
+5. Figure out a nice way to expand the 'active' file during the previous/next navigation **while** closing the other daily files. One wouldn't want to 'unfold' all the folders in the file-explorer, but it is also annoying that you cannot see  the 'context' in the file explorer currently. Would probably require some decently complex system involving `file-explorer:reveal-active-file`
+
+
+
