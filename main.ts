@@ -1,5 +1,4 @@
 import {App, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
-const path = require('path');
 import type { Moment } from "moment";
 
 
@@ -45,16 +44,16 @@ export default class DailyFolderPlugin extends Plugin {
 					this.app.commands.executeCommandById('file-explorer:reveal-active-file'); // show in file explorer
 					new Notice('Opened daily folder');
 				} else {  // we have to make a new daily folder, as it does not exist yet.
-					let folder_description:string  = '';
+					let folderDescription:string  = '';
 
 					if (this.settings.description) {
 						// get the folder description from a modal panel
-						folder_description = await new descriptionModal(this.app, this.settings,
+						folderDescription = await new descriptionModal(this.app, this.settings,
 							'Creating New daily folder', '');
 					}
 
-					let foldername = this.makeDailyFolderPath() + folder_description + '/';
-					let filename = this.makeDailyNoteBaseName() + folder_description + '.md';
+					let foldername = this.makeDailyFolderPath() + folderDescription + '/';
+					let filename = this.makeDailyNoteBaseName() + folderDescription + '.md';
 
 					// make daily directory
 					await this.app.vault.createFolder(foldername);
@@ -68,8 +67,8 @@ export default class DailyFolderPlugin extends Plugin {
 					// and fill it with the template
 					try {
 						// get the template content
-						let template_raw = await this.app.vault.read( this.app.vault.getAbstractFileByPath(this.settings.template));
-						const template = this.process_template(template_raw);
+						let rawTemplate = await this.app.vault.read( this.app.vault.getAbstractFileByPath(this.settings.template));
+						const template = this.processTemplate(rawTemplate);
 						// copy the template content to the new daily folder file
 						await this.app.vault.modify( this.app.vault.getAbstractFileByPath(foldername + filename),
 							template);
@@ -115,8 +114,8 @@ export default class DailyFolderPlugin extends Plugin {
 		this.addSettingTab(new DailyFolderSettingTab(this.app, this));
 	}
 
-	process_template(template_raw: string): string {
-		const template = template_raw.replace(/({{[^}]+}})/g, (match) => {
+	processTemplate(rawTemplate: string): string {
+		const template = rawTemplate.replace(/({{[^}]+}})/g, (match) => {
 			// remove marker characters
 			const cleaned = match.replace("{{","").replace("}}","").replace("date:","");
 			// now use Moment.js to format the string
@@ -125,7 +124,7 @@ export default class DailyFolderPlugin extends Plugin {
 		return template
 	}
 
-	currentDailyFile(): Tfile {
+	currentDailyFile(): TFile {
 		// get the current file opened - first get the leaf
 		const actLeaf = this.app.workspace.activeLeaf;
 		// then get the file ( if the leaf it not null; - no leaf might be open)
@@ -140,15 +139,15 @@ export default class DailyFolderPlugin extends Plugin {
 			// get the date of the file we are renaming
 			let currentFileDate = this.dailyFileToDate(currentFile);
 
-			let new_name = await new descriptionModal(this.app, this.settings, 'Rename daily folder',
+			let newName = await new descriptionModal(this.app, this.settings, 'Rename daily folder',
 				currentFile.basename.slice(this.settings.format.length+1, ));  // set current name as value
 
 			// rename file
 			await this.app.fileManager.renameFile(currentFile,
-				currentFile.parent.path + '/' + currentFileDate.format(this.settings.format) + new_name + '.md');
+				currentFile.parent.path + '/' + currentFileDate.format(this.settings.format) + newName + '.md');
 			// then rename the folder
 			await this.app.fileManager.renameFile(currentFile.parent,
-				currentFile.parent.parent.path + '/' + currentFileDate.format(this.settings.format) + new_name);
+				currentFile.parent.parent.path + '/' + currentFileDate.format(this.settings.format) + newName);
 
 			new Notice('Renamed daily folder');
 		} else {  // no daily folder open in current active leafs
@@ -177,9 +176,9 @@ export default class DailyFolderPlugin extends Plugin {
 			if (relevantDailyFiles.length) {
 				// we cannot rely on getMarkDownFiles() to return sorted list, so we must it it ourselves.
 				const closest: TFile = relevantDailyFiles.reduce( (closestFile, file) => {
-					const old_diff = currentFileDate.diff(this.dailyFileToDate(closestFile));
-					const new_diff = currentFileDate.diff(this.dailyFileToDate(file));
-					return Math.abs(old_diff) > Math.abs(new_diff) ? file : closestFile
+					const oldDiff = currentFileDate.diff(this.dailyFileToDate(closestFile));
+					const newDiff = currentFileDate.diff(this.dailyFileToDate(file));
+					return Math.abs(oldDiff) > Math.abs(newDiff) ? file : closestFile
 				});
 
 				await this.app.workspace.openLinkText(closest.name, closest.path)
@@ -206,8 +205,8 @@ export default class DailyFolderPlugin extends Plugin {
 	isDailyFile(mdfile: TFile) {
 		let name = mdfile.basename;
 		// only support fixed length Moment names (i.e. not things like 'August', only aug, or 08)
-		const valid_format = moment(name.substring(0, this.settings.format.length), this.settings.format, true).isValid();
-		if (valid_format) {
+		const isValidFormat = moment(name.substring(0, this.settings.format.length), this.settings.format, true).isValid();
+		if (isValidFormat) {
 			//  two checks (1) name of folder matches that of file (mdfile.basename) and (2) if the daily folder
 			// (mdfile.parent) is a subdirectory of the this.settings.root
 			// TODO: support deeper nesting (e.g. root= 'basefolder/subfolder/')
@@ -260,23 +259,27 @@ class descriptionModal extends Modal {
 	constructor(app: App, settings: Object, title: string, prevalue: string) {
 		super(app);
 		this.settings = settings;
-		this.open()
-		this.path_description = '';
+		this.open();
+		this.pathDescription = '';
 		this.submitted = false;
-		document.querySelector('.daily-folder-title').innerHTML = title;
+
+		let titleEl:HTMLDivElement =  document.querySelector('.modal .modal-title');
+		titleEl.innerText = title;
 
 		let {containerEl} = this;
 		let inputEl: HTMLInputElement = containerEl.querySelector('#daily-folder-input');
-		let displayEl = containerEl.querySelector('.daily-folder-path-preview-text');
+		let previewTextEl: HTMLSpanElement = containerEl.querySelector('.daily-folder-path-preview-text');
 		inputEl.value = prevalue;
 
 		// pre-build the display value
-		displayEl.innerHTML = this.buildPathPreview(inputEl.value);
+		previewTextEl.innerText = this.buildPathPreview(inputEl.value);
 
 		// focus and select
 		inputEl.focus();
 		inputEl.select();
 
+		// bit of a strange construction but I saw this in another obsidian plugin, so it's the best I got
+		// suggestions for a nice way to get string return value from the modal appreciated.
 		this.waitForClose = new Promise<string>(
 			(resolve, reject) => {
 				this.resolvePromise = resolve;
@@ -287,35 +290,59 @@ class descriptionModal extends Modal {
 	}
 
 	onOpen() {
+		// build the modal HTML
 		let {containerEl} = this;
-		containerEl.innerHTML = `
-			<div class="modal-bg"></div>
-			<div class="prompt">
-				<h2 class="daily-folder-title"></h2>
-				<input id="daily-folder-input" class="prompt-input" type="text" placeholder="Type folder name/summary..." >
-				<div class="daily-folder-prompt-path-preview">
-					<span style="white-space: nowrap">path preview</span>
-					<span class="daily-folder-path-preview-text"></span>
-				</div>
-				<div class="prompt-instructions">
-					<div class="prompt-instruction"><span class="prompt-instruction-command">↵</span><span>to confirm filename</span>
-					</div>
-					<div class="prompt-instruction"><span class="prompt-instruction-command">esc</span><span>to dismiss</span></div>
-				</div>
-			</div>
-		`;
-		let inputEl = containerEl.querySelector('#daily-folder-input');
-		let displayEl = containerEl.querySelector('.daily-folder-path-preview-text');
+		let modalContent = containerEl.querySelector('.modal-content');
 
+		let inputEl = document.createElement("INPUT");
+		inputEl.setAttribute("type", "text");
+		inputEl.setAttribute("placeholder", "Type folder name/summary...");
+		inputEl.addClass("prompt-input");
+		inputEl.id = "daily-folder-input";
+		modalContent.appendChild(inputEl);
+
+		let previewEl = document.createElement("div");
+		previewEl.addClass("daily-folder-prompt-path-preview");
+		let previewPreTextEl = document.createElement("span");
+		previewPreTextEl.innerText = "path-preview";
+		previewPreTextEl.style.whiteSpace = "nowrap";
+		let previewTextEl = document.createElement("span");
+		previewTextEl.addClass("daily-folder-path-preview-text");
+		previewEl.appendChild(previewPreTextEl);
+		previewEl.appendChild(previewTextEl);
+		modalContent.appendChild(previewEl);
+
+		let instructionEl = document.createElement("div");
+		instructionEl.addClass("prompt-instructions");
+		let hint1 = document.createElement("div");
+		hint1.addClass("prompt-instruction");
+			let instruction1 = document.createElement("span");
+			instruction1.addClass("prompt-instruction-command");
+			instruction1.innerText = "↵";
+			hint1.appendChild(instruction1);
+			let instruction1Text = document.createElement("span");
+			instruction1Text.innerText = "to confirm filename";
+			hint1.appendChild(instruction1Text);
+		let hint2 = document.createElement("div");
+		hint2.addClass("prompt-instruction");
+			let instruction2 = document.createElement("span");
+			instruction2.addClass("prompt-instruction-command");
+			instruction2.innerText = "esc";
+			hint2.appendChild(instruction2);
+			let instruction2Text = document.createElement("span");
+			instruction2Text.innerText = "to dismiss";
+			hint2.appendChild(instruction2Text);
+		instructionEl.appendChild(hint1);
+		instructionEl.appendChild(hint2);
+		modalContent.appendChild(instructionEl);
 
 		// TODO think of a better way to prevent this from getting out of sync with the plugin class
-		//let buildPath = (inputString) =>
 		// set the initial value for preview's sake.
-		displayEl.innerHTML = this.buildPath('');
+		previewTextEl.innerText = this.buildPath('');
 
 		// whenever a character is changed in the input element
 		inputEl.addEventListener('input', (e) => {
-			displayEl.innerHTML = this.buildPathPreview(e.target.value);
+			previewTextEl.innerText = this.buildPathPreview(e.target.value);
 		} );
 
 		// when enter is pressed (i.e. input confirmed)
@@ -336,8 +363,8 @@ class descriptionModal extends Modal {
 
 	submitDescription(description: string): void {
 		this.submitted = true;
-		this.path_description = this.buildPath(description);
-		console.log('Submitting the path extension: ', this.path_description);
+		this.pathDescription = this.buildPath(description);
+		console.log('Submitting the path extension: ', this.pathDescription);
 		this.close();
 	}
 
@@ -346,7 +373,7 @@ class descriptionModal extends Modal {
 		containerEl.empty();
 
 		if(!this.submitted) this.rejectPromise('');
-		else this.resolvePromise(this.path_description);
+		else this.resolvePromise(this.pathDescription);
 	}
 }
 
@@ -395,7 +422,7 @@ class DailyFolderSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					//console.log('[DAILY FOLDER] location set: ' + value);
 					if (await this.app.vault.adapter.exists(value) && !value.contains('.md')) {
-						folderSetting.settingEl.classList.remove('invalid-path');
+						folderSetting.settingEl.removeClass('invalid-path');
 						if (value.slice(-1) === '/') { value = value.slice(0, -1)} // remove trailing '/'
 						console.log('Setting Daily Folder root path to: ', value);
 						this.plugin.settings.root = value;
@@ -407,13 +434,13 @@ class DailyFolderSettingTab extends PluginSettingTab {
 
 		let templateSetting = new Setting(containerEl)
 			.setName('Template file location')
-			.setDesc("Choose the file to use as a template. (end with .md)")
+			.setDesc("Choose the file to use as a template. (must end with .md)")
 			.addText(text => text
 				.setPlaceholder('Example: templ/daily_log.md')
 				.setValue(this.plugin.settings.template)
 				.onChange(async (value) => {
 					//console.log('[DAILY FOLDER] template set: ' + value);
-					if (await this.app.vault.adapter.exists(value) && value.contains('.md')) {
+					if (await this.app.vault.adapter.exists(value) && value.endsWith('.md')) {
 						templateSetting.settingEl.classList.remove('invalid-path');
 						console.log('Setting Daily Folder template to: ', value)
 						this.plugin.settings.template = value;
