@@ -1,6 +1,6 @@
 {
 	"id": "obsidian-daily-named-folder",
-	"name": "Daily Folder",
+	"name": "Daily Named Folder",
 	"version": "0.1.3",
 	"minAppVersion": "0.9.12",
 	"description": "Like daily notes, but nested in a named daily folder. Better for attachment management. Includes more flexible naming.",

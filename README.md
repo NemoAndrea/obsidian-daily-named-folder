@@ -1,8 +1,8 @@
-## Obsidian Daily Folder Plugin
+## Obsidian Daily Named Folder Plugin
 
 A community plugin for [Obsidian](https://obsidian.md/). 
 
-the `daily-folder` plugin is exactly like the official `daily-note` plugin, **except** for the fact (1) that the daily note is created **inside it's own folder** and **(2) a one-line description is added to the filename.** This is desirable if you want to keep attachments for the daily note in separate folders.
+the `daily-named-folder` plugin is exactly like the official `daily-note` plugin, **except** for the fact (1) that the daily note is created **inside it's own folder** and **(2) a one-line description is added to the filename.** This is desirable if you want to keep attachments for the daily note in separate folders.
 
 > It is possible to create daily folders using the core `daily-notes` plugin. Currently (as of 2021-08-31) this will break the 'previous/next' navigation hotkeys, but if that is not a problem and you don't *want* **named** folders, it is recommended you use that over this plugin.
 
