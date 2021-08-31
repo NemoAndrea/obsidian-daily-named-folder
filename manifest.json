@@ -1,9 +1,9 @@
 {
-	"id": "obsidian-daily-folder",
+	"id": "obsidian-daily-named-folder",
 	"name": "Daily Folder",
 	"version": "0.1.2",
 	"minAppVersion": "0.9.12",
-	"description": "Like daily notes, but nested in a daily folder. Better for attachment management. Includes more flexible naming.",
+	"description": "Like daily notes, but nested in a named daily folder. Better for attachment management. Includes more flexible naming.",
 	"author": "Nemo Andrea",
 	"authorUrl": "http://nemoandrea.github.io/",
 	"isDesktopOnly": false

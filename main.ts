@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS: DailyFolderSettings = {
 	template: ''
 };
 
-export default class DailyFolderPlugin extends Plugin {
+export default class DailyNamedFolderPlugin extends Plugin {
 	settings: DailyFolderSettings;
 
 	async onload() {
@@ -352,9 +352,9 @@ class descriptionModal extends Modal {
 }
 
 class DailyFolderSettingTab extends PluginSettingTab {
-	plugin: DailyFolderPlugin;
+	plugin: DailyNamedFolderPlugin;
 
-	constructor(app: App, plugin: DailyFolderPlugin) {
+	constructor(app: App, plugin: DailyNamedFolderPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

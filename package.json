@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-sample-plugin",
+  "name": "obsidian-daily-named-folder",
   "version": "0.12.0",
-  "description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+  "description": "Like daily notes, but nested in a named daily folder. Better for attachment management. Includes more flexible naming.",
   "main": "main.js",
   "scripts": {
     "dev": "rollup --config rollup.config.js -w",
