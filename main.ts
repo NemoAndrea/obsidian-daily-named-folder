@@ -59,19 +59,20 @@ export default class DailyFolderPlugin extends Plugin {
 					await this.app.vault.createFolder(foldername);
 					// make daily note inside the daily directory
 					await this.app.vault.adapter.write(foldername + filename, '');
-
-					// open it
-					await this.app.workspace.openLinkText(filename, foldername);
-					// TODO: figure out why reveal-active file doesn't work here. Maybe file not indexed yet?
-					//this.app.commands.executeCommandById('file-explorer:reveal-active-file'); // show in file explorer
 					// and fill it with the template
 					try {
 						// get the template content
-						let rawTemplate = await this.app.vault.read( this.app.vault.getAbstractFileByPath(this.settings.template));
+						let rawTemplate = await this.app.vault.read(
+							this.app.vault.getAbstractFileByPath(this.settings.template));
 						const template = this.processTemplate(rawTemplate);
 						// copy the template content to the new daily folder file
 						await this.app.vault.modify( this.app.vault.getAbstractFileByPath(foldername + filename),
 							template);
+
+						// open the daily folder
+						await this.app.workspace.openLinkText(filename, foldername);
+						// TODO: figure out why reveal-active file doesn't work here. Maybe file not indexed yet?
+						this.app.commands.executeCommandById('file-explorer:reveal-active-file'); // show in file explorer
 
 						// we are done
 						new Notice('Created new daily folder');
@@ -294,47 +295,20 @@ class descriptionModal extends Modal {
 		let {containerEl} = this;
 		let modalContent = containerEl.querySelector('.modal-content');
 
-		let inputEl = document.createElement("INPUT");
-		inputEl.setAttribute("type", "text");
-		inputEl.setAttribute("placeholder", "Type folder name/summary...");
-		inputEl.addClass("prompt-input");
-		inputEl.id = "daily-folder-input";
-		modalContent.appendChild(inputEl);
+		let inputEl = modalContent.createEl('input', {cls: "prompt-input", type: "text",
+			attr: {id: "daily-folder-input", placeholder: "Type folder name/summary..."} });
 
-		let previewEl = document.createElement("div");
-		previewEl.addClass("daily-folder-prompt-path-preview");
-		let previewPreTextEl = document.createElement("span");
-		previewPreTextEl.innerText = "path-preview";
-		previewPreTextEl.style.whiteSpace = "nowrap";
-		let previewTextEl = document.createElement("span");
-		previewTextEl.addClass("daily-folder-path-preview-text");
-		previewEl.appendChild(previewPreTextEl);
-		previewEl.appendChild(previewTextEl);
-		modalContent.appendChild(previewEl);
+		let previewEl = modalContent.createDiv( {cls: "daily-folder-prompt-path-preview", type: "text" });
+		previewEl.createSpan({cls: "daily-folder-path-preview-pre", text: "path-preview" });
+		let previewTextEl = previewEl.createSpan({cls: "daily-folder-path-preview-text" });
 
-		let instructionEl = document.createElement("div");
-		instructionEl.addClass("prompt-instructions");
-		let hint1 = document.createElement("div");
-		hint1.addClass("prompt-instruction");
-			let instruction1 = document.createElement("span");
-			instruction1.addClass("prompt-instruction-command");
-			instruction1.innerText = "↵";
-			hint1.appendChild(instruction1);
-			let instruction1Text = document.createElement("span");
-			instruction1Text.innerText = "to confirm filename";
-			hint1.appendChild(instruction1Text);
-		let hint2 = document.createElement("div");
-		hint2.addClass("prompt-instruction");
-			let instruction2 = document.createElement("span");
-			instruction2.addClass("prompt-instruction-command");
-			instruction2.innerText = "esc";
-			hint2.appendChild(instruction2);
-			let instruction2Text = document.createElement("span");
-			instruction2Text.innerText = "to dismiss";
-			hint2.appendChild(instruction2Text);
-		instructionEl.appendChild(hint1);
-		instructionEl.appendChild(hint2);
-		modalContent.appendChild(instructionEl);
+		let instructionEl = modalContent.createDiv({cls: "prompt-instructions" });
+		let hint1 = instructionEl.createDiv({cls: "prompt-instruction"});
+		hint1.createSpan({cls: "prompt-instruction-command", text: "↵"});
+		hint1.createSpan({text: "to confirm filename"});
+		let hint2 = instructionEl.createDiv({cls: "prompt-instruction"});
+		hint2.createSpan({cls: "prompt-instruction-command", text: "esc"});
+		hint2.createSpan({text: "to dismiss"});
 
 		// TODO think of a better way to prevent this from getting out of sync with the plugin class
 		// set the initial value for preview's sake.
@@ -404,7 +378,8 @@ class DailyFolderSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Prompt for filename summary')
-			.setDesc("When creating daily folder, prompt for a description to be appended behind date format")
+			.setDesc("When creating daily folder, prompt for a description to be appended behind date format. " +
+				"With this feature turned off, the plugin is very similar to the core daily-notes plugin.")
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.description)
 				.onChange(async (value) => {
@@ -421,7 +396,7 @@ class DailyFolderSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.root)
 				.onChange(async (value) => {
 					//console.log('[DAILY FOLDER] location set: ' + value);
-					if (await this.app.vault.adapter.exists(value) && !value.contains('.md')) {
+					if (await this.app.vault.adapter.exists(value) && !value.endsWith('.md')) {
 						folderSetting.settingEl.removeClass('invalid-path');
 						if (value.slice(-1) === '/') { value = value.slice(0, -1)} // remove trailing '/'
 						console.log('Setting Daily Folder root path to: ', value);

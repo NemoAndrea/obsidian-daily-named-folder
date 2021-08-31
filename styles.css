@@ -4,6 +4,10 @@
     overflow-wrap: break-word;
 }
 
+.daily-folder-path-preview-pre {
+    white-space: nowrap;
+}
+
 .daily-folder-path-preview-text {
     border-radius: 10px;
     padding: 3px 8px;

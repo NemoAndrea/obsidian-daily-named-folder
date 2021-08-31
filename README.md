@@ -2,11 +2,15 @@
 
 A community plugin for [Obsidian](https://obsidian.md/). 
 
-the `daily-folder` plugin is exactly like the official `daily-note` plugin, except for the fact that the daily note is created inside it's own folder. This is desirable if you want to keep attachments for the daily note in separate folders.
+the `daily-folder` plugin is exactly like the official `daily-note` plugin, **except** for the fact (1) that the daily note is created **inside it's own folder** and **(2) a one-line description is added to the filename.** This is desirable if you want to keep attachments for the daily note in separate folders.
+
+> It is possible to create daily folders using the core `daily-notes` plugin. Currently (as of 2021-08-31) this will break the 'previous/next' navigation hotkeys, but if that is not a problem and you don't *want* **named** folders, it is recommended you use that over this plugin.
+
+> Using this plugin will (probably) not work with other plugins such as `Calendar` that rely on the default implementation in `daily-notes` and will get upset by the named folders.
 
 ![apple](https://i.imgur.com/RWckxI8.gif)
 
-The plugin keeps all the nice features of the `daily-note` plugin and adds a few new ones
+The plugin implements most of the nice features of the `daily-notes` plugin and adds a few new ones
 
 * Previous/Next daily note navigation. *Will find the nearest previous/next node - no need to worry about missed days.*
 * Smart new daily note: the `today's daily folder` function will create a new daily note **or, if a file already exists, open up the existing file.** 
@@ -39,6 +43,8 @@ There are 4 configuration options
 
    > E.g. `20210801`  with prompt off, with prompt on you can get something like  `20210801_getting_a_new_puppy`
 
+   > If you find yourself turning this feature off, ask yourself if the standard `daily-notes` core plugin also works for your use case. If you specify a daily folder path as e.g.`YYYYMMDD/YYYYMMDD` it will create a daily folder with that format. So that is completely identical to this plugin with this feature turned off! The only reason why you would use this currently is because the `daily-notes` plugin's 'previous/next' navigation breaks, while this plugin has no problems with that. I think that should be considered a bug and might be fixed in the future!
+
 3. `Daily folders location`  - the root directory for new daily folders. **Does not support nesting currently**
 
 4. `Template filee location` - the path to the markdown file to use as template. Supports Moment.js variables.  
@@ -49,7 +55,7 @@ I developed the plugin for my workflow. I use Obsidian as my lab journal for res
 
 The official `daily-note` plugin did not work for this workflow for 2 reasons:
 
-1. It is not possible to keep images for a daily note with the daily file. (or at least not compactly)
+1. It is not possible to keep images for a daily note together with the daily file in one folder **and retain previous/next shortcuts.**
 
    > Being able to find images quickly is helpful if one intends to use them for other display purposes (e.g. in making a presentation, sending to a collaborator)
 
