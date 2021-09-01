@@ -55,34 +55,26 @@ export default class DailyNamedFolderPlugin extends Plugin {
 					let foldername = this.makeDailyFolderPath() + folderDescription + '/';
 					let filename = this.makeDailyNoteBaseName() + folderDescription + '.md';
 
-					// make daily directory
-					await this.app.vault.createFolder(foldername);
-					// make daily note inside the daily directory
-					await this.app.vault.adapter.write(foldername + filename, '');
-					// and fill it with the template
-					try {
-						// get the template content
-						let rawTemplate = await this.app.vault.read(
-							this.app.vault.getAbstractFileByPath(this.settings.template));
+					// get the template content
+					const templateFile = this.app.vault.getAbstractFileByPath(this.settings.template);
+					if (templateFile instanceof TFile) {
+						let rawTemplate = await this.app.vault.read(templateFile);
 						const template = this.processTemplate(rawTemplate);
 						// copy the template content to the new daily folder file
-						await this.app.vault.modify( this.app.vault.getAbstractFileByPath(foldername + filename),
-							template);
-
-						// open the daily folder
+						// make daily directory
+						await this.app.vault.createFolder(foldername);
+						// make daily note inside the daily directory and  fill it with the template
+						await this.app.vault.create(foldername + filename, template);
+						// open the daily folder to active leaf
 						await this.app.workspace.openLinkText(filename, foldername);
-						// TODO: figure out why reveal-active file doesn't work here. Maybe file not indexed yet?
-						this.app.commands.executeCommandById('file-explorer:reveal-active-file'); // show in file explorer
-
-						// we are done
+						// show in file explorer
+						this.app.commands.executeCommandById('file-explorer:reveal-active-file');
+						// we are done, so let's notify user
 						new Notice('Created new daily folder');
-					} catch (e) {
-						if (e instanceof TypeError) {  // if vault.read gets a null argument
-							new Notice('Problem loading template for daily folder');
-							throw e
-						} else {
-							throw e
-						}
+					} else { // if template file has been moved/renamed/deleted
+						new Notice('Oops, something went wrong trying to make a daily-named-folder!');
+						throw "Something went wrong trying to get the template file for daily-named-folder. " +
+							"Attempted to open template at " + this.settings.template;
 					}
 				}
 			},
@@ -118,23 +110,15 @@ export default class DailyNamedFolderPlugin extends Plugin {
 	processTemplate(rawTemplate: string): string {
 		const template = rawTemplate.replace(/({{[^}]+}})/g, (match) => {
 			// remove marker characters
-			const cleaned = match.replace("{{","").replace("}}","").replace("date:","");
+			const cleaned = match.replace("{{", "").replace("}}", "").replace("date:", "");
 			// now use Moment.js to format the string
 			return moment().format(cleaned)
 		});
 		return template
 	}
 
-	currentDailyFile(): TFile {
-		// get the current file opened - first get the leaf
-		const actLeaf = this.app.workspace.activeLeaf;
-		// then get the file ( if the leaf it not null; - no leaf might be open)
-		const currentFile: TFile = actLeaf ? actLeaf.view.file : null;
-		return currentFile
-	}
-
 	async renameDailyFolder() {
-		let currentFile = this.currentDailyFile();
+		let currentFile = this.app.workspace.getActiveFile();
 
 		if (this.isDailyFile(currentFile)) {
 			// get the date of the file we are renaming
@@ -157,7 +141,7 @@ export default class DailyNamedFolderPlugin extends Plugin {
 	}
 
 	async openClosestDailyFolder(forward:boolean) {
-		let currentFile = this.currentDailyFile();
+		let currentFile = this.app.workspace.getActiveFile();
 		if (this.isDailyFile(currentFile)) {
 			// get other daily folder files in vault
 			let dailyFiles = this.app.vault.getMarkdownFiles().filter((file) => this.isDailyFile(file));
