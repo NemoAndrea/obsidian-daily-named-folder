@@ -47,7 +47,7 @@ There are 4 configuration options
 
 3. `Daily folders location`  - the root directory for new daily folders. **Does not support nesting currently**
 
-4. `Template filee location` - the path to the markdown file to use as template. Supports Moment.js variables.  
+4. `Template file location` - the path to the markdown file to use as template. Supports Moment.js variables.  
 
 ### Example use case
 

@@ -29,7 +29,7 @@ export default class DailyNamedFolderPlugin extends Plugin {
 		// ribbon icon should do the exact same thing as the comand 'open-daily-folder' that can be triggered
 		// via palette
 		this.addRibbonIcon('calendar-with-checkmark', "Open today's daily note folder", () => {
-			this.app.commands.executeCommandById('obsidian-daily-folder:open-daily-folder');
+			this.app.commands.executeCommandById('obsidian-daily-named-folder:open-daily-folder');
 		});
 
 		this.addCommand({
