@@ -8,6 +8,7 @@ interface DailyFolderSettings {
 	root: string;
 	useTemplate: boolean;
 	template: string;
+	dateFormat: string;
 }
 
 const DEFAULT_SETTINGS: DailyFolderSettings = {
@@ -15,7 +16,8 @@ const DEFAULT_SETTINGS: DailyFolderSettings = {
 	description: true,
 	root: '',
 	useTemplate: true,
-	template: ''
+	template: '',
+	dateFormat: ''
 };
 
 export default class DailyNamedFolderPlugin extends Plugin {
@@ -118,11 +120,36 @@ export default class DailyNamedFolderPlugin extends Plugin {
 	}
 
 	processTemplate(rawTemplate: string): string {
+		//console.log("processTemplate: " + rawTemplate);
 		const template = rawTemplate.replace(/({{[^}]+}})/g, (match) => {
 			// remove marker characters
-			const cleaned = match.replace("{{", "").replace("}}", "").replace("date:", "");
+			let cleaned = match.replace("{{", "").replace("}}", "");
+			const parts = cleaned.split(":");
+			let date = parts[0];
+			if (parts.length == 0) {
+				console.log("ERROR: has no date to substitute");
+				return;
+			}
+			let dateFormat = this.settings.dateFormat;
+			if (parts.length > 1) {
+				dateFormat = parts[1];
+			}
+			while (date.indexOf(" ")>=0) {
+				date = date.replace(" ", "");
+			}
 			// now use Moment.js to format the string
-			return moment().format(cleaned)
+			if (date && date.length > 0 && date === 'date') {
+				console.log("Uses format: " + dateFormat);
+				return moment().format(dateFormat);
+			} else if (date && date.length > 0 && date.startsWith("date+")) {
+				date = date.replace("date+", "");
+				const days = parseInt(date);
+				console.log("Uses format: " + dateFormat);
+				return moment().add(days, 'days').format(dateFormat);
+			} else {
+				console.log("Uses old formatter: " + date);
+				return moment().format(date)
+			}
 		});
 		return template
 	}
@@ -414,6 +441,18 @@ class DailyFolderSettingTab extends PluginSettingTab {
 
 					// Re-render the settings page
 					this.display();
+				}));
+
+		new Setting(containerEl)
+			.setName("Date format in text")
+			.setDesc("Use {{date}} template inside template file for substitution with current date")
+			.addText(text => text
+				.setPlaceholder('Ex: YYYYMMDD')
+				.setValue(this.plugin.settings.dateFormat)
+				.onChange(async (value) => {
+					//console.log('[DATE FORMAT] format set: ' + value);
+					this.plugin.settings.dateFormat = value;
+					await this.plugin.saveSettings();
 				}));
 
 		if (this.plugin.settings.useTemplate){
